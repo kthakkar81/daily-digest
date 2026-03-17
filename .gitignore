@@ -1,0 +1,36 @@
+# Environment variables and secrets
+.env
+*.env
+
+# OAuth credentials and tokens
+credentials/
+token.json
+token.pickle
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Output
+output/
+*.html

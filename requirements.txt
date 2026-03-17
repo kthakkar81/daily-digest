@@ -1,0 +1,19 @@
+# Email access
+google-auth==2.27.0
+google-auth-oauthlib==1.2.0
+google-auth-httplib2==0.2.0
+google-api-python-client==2.116.0
+imapclient==3.0.1
+
+# AI/LLM
+anthropic==0.18.1
+
+# Email parsing and generation
+beautifulsoup4==4.12.3
+lxml==5.1.0
+
+# Configuration
+python-dotenv==1.0.1
+
+# Utilities
+requests==2.31.0
