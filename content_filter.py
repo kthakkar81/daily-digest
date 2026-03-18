@@ -50,28 +50,47 @@ class ContentFilter:
 
     def _analyze_email(self, email):
         """Use Claude to analyze and categorize an email"""
-        prompt = f"""Analyze this email/newsletter and categorize it into ONE of these categories:
+        prompt = f"""Analyze this newsletter/article and categorize it into ONE of these categories:
 {', '.join(CATEGORIES)}
 
 Email Details:
 Subject: {email['subject']}
 From: {email['sender']}
-Content: {email['body'][:2000]}
+Content: {email['body'][:5000]}
+
+Your task is to extract ACTIONABLE INTELLIGENCE for a professional in this field.
+
+For INVESTING content, extract:
+- Market sentiment and key data points (e.g., "Core PPI rose 0.3%")
+- Tactical trading ideas or implications (e.g., "Possible rate hike trades")
+- Specific market moves or trends
+- Economic indicators and their meaning
+
+For other categories, extract:
+- Specific actionable takeaways (not descriptions of what the newsletter is)
+- Key data, trends, or insights
+- Practical advice or strategies
+
+If the email contains article links, include them in your summary.
 
 Tasks:
 1. Determine which ONE category fits best (or "None" if it doesn't fit any)
 2. Rate relevance from 1-10 for that category
-3. Write a 2-sentence summary of key points
-4. Extract 2-3 key insights or takeaways
+3. Write a 2-3 sentence summary focusing on ACTIONABLE INSIGHTS (not what the newsletter is about)
+4. Extract 3-5 specific takeaways with data points, links, or actions
+   - Include article links in markdown format when available
+   - Focus on actionable intelligence, not generic descriptions
 
 Respond in this exact format:
 CATEGORY: [category name or None]
 RELEVANCE: [1-10]
-SUMMARY: [2 sentences]
+SUMMARY: [2-3 sentences of actionable insights]
 INSIGHTS:
-- [insight 1]
-- [insight 2]
-- [insight 3]"""
+- [specific insight with data/link]
+- [specific insight with data/link]
+- [specific insight with data/link]
+- [specific insight with data/link]
+- [specific insight with data/link]"""
 
         message = self.client.messages.create(
             model="claude-sonnet-4-20250514",

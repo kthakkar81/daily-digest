@@ -78,38 +78,57 @@ class EmailFetcher:
         }
 
     def _extract_body(self, payload):
-        """Extract email body from payload"""
-        body = ""
+        """Extract email body from payload, preferring HTML with more content"""
+        # Collect all text parts (both plain and HTML)
+        text_parts = []
 
-        if 'parts' in payload:
-            for part in payload['parts']:
-                if part['mimeType'] == 'text/plain':
-                    if 'data' in part['body']:
-                        body = base64.urlsafe_b64decode(part['body']['data']).decode('utf-8')
-                        break
-                elif part['mimeType'] == 'text/html':
-                    if 'data' in part['body']:
+        def extract_parts(payload_part):
+            """Recursively extract all text/plain and text/html parts"""
+            if 'parts' in payload_part:
+                for part in payload_part['parts']:
+                    if part['mimeType'] == 'text/plain' and 'data' in part['body']:
+                        text = base64.urlsafe_b64decode(part['body']['data']).decode('utf-8')
+                        text_parts.append(('plain', text, len(text)))
+                    elif part['mimeType'] == 'text/html' and 'data' in part['body']:
                         html = base64.urlsafe_b64decode(part['body']['data']).decode('utf-8')
-                        body = self._html_to_text(html)
-                        break
-                elif 'parts' in part:
-                    body = self._extract_body(part)
-                    if body:
-                        break
-        else:
-            if 'data' in payload.get('body', {}):
-                data = payload['body']['data']
-                if payload['mimeType'] == 'text/html':
-                    html = base64.urlsafe_b64decode(data).decode('utf-8')
-                    body = self._html_to_text(html)
-                else:
-                    body = base64.urlsafe_b64decode(data).decode('utf-8')
+                        text = self._html_to_text(html)
+                        text_parts.append(('html', text, len(text)))
+                    elif 'parts' in part:
+                        # Recursively check nested parts (e.g., multipart/related)
+                        extract_parts(part)
+            else:
+                # Single part message
+                if 'data' in payload_part.get('body', {}):
+                    data = payload_part['body']['data']
+                    if payload_part['mimeType'] == 'text/html':
+                        html = base64.urlsafe_b64decode(data).decode('utf-8')
+                        text = self._html_to_text(html)
+                        text_parts.append(('html', text, len(text)))
+                    elif payload_part['mimeType'] == 'text/plain':
+                        text = base64.urlsafe_b64decode(data).decode('utf-8')
+                        text_parts.append(('plain', text, len(text)))
 
-        return body
+        extract_parts(payload)
+
+        # Return the longest text part (usually HTML has more content than plain)
+        if text_parts:
+            text_parts.sort(key=lambda x: x[2], reverse=True)  # Sort by length
+            return text_parts[0][1]  # Return the longest text
+
+        return ""
 
     def _html_to_text(self, html):
-        """Convert HTML to plain text"""
-        soup = BeautifulSoup(html, 'lxml')
+        """Convert HTML to plain text, preserving article links"""
+        soup = BeautifulSoup(html, 'html.parser')
+
+        # Extract all links BEFORE converting to text
+        links = []
+        for link in soup.find_all('a', href=True):
+            link_text = link.get_text().strip()
+            url = link['href']
+            if url and url.startswith('http'):  # Only external links
+                links.append(f"[{link_text}]({url})")
+
         # Remove script and style elements
         for script in soup(["script", "style"]):
             script.decompose()
@@ -118,6 +137,11 @@ class EmailFetcher:
         lines = (line.strip() for line in text.splitlines())
         chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
         text = ' '.join(chunk for chunk in chunks if chunk)
+
+        # Append links at the end if any found
+        if links:
+            text += "\n\nArticle Links:\n" + "\n".join(links)
+
         return text
 
     def is_newsletter(self, email):
@@ -148,8 +172,7 @@ class EmailFetcher:
 
                 # Check if it's a newsletter
                 if self.is_newsletter(email):
-                    # Truncate body to first 3000 characters for processing
-                    email['body'] = email['body'][:3000]
+                    # Keep full body (links are at the end) - Claude will get first 5000 chars
                     newsletters.append(email)
                     print(f"   ✓ {email['subject'][:60]}")
 

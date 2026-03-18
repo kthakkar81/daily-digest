@@ -1,4 +1,5 @@
 """Generate HTML email digest from categorized content"""
+import re
 from datetime import datetime
 from config import CATEGORIES
 
@@ -6,6 +7,11 @@ class DigestGenerator:
     def __init__(self, categorized_content):
         self.content = categorized_content
         self.date = datetime.now().strftime('%B %d, %Y')
+
+    def _markdown_links_to_html(self, text):
+        """Convert markdown links [text](url) to HTML <a> tags"""
+        pattern = r'\[([^\]]+)\]\(([^\)]+)\)'
+        return re.sub(pattern, r'<a href="\2" style="color: #0066cc; text-decoration: none; font-weight: 500;">\1</a>', text)
 
     def generate_html(self):
         """Generate HTML email digest"""
@@ -19,7 +25,7 @@ class DigestGenerator:
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             line-height: 1.6;
             color: #333;
-            max-width: 600px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 20px;
             background-color: #f5f5f5;
@@ -129,25 +135,39 @@ class DigestGenerator:
         </div>
 """
 
+        # Sort categories: ones with content first, then empty ones
+        categories_with_content = [cat for cat in CATEGORIES if self.content.get(cat, [])]
+        categories_without_content = [cat for cat in CATEGORIES if not self.content.get(cat, [])]
+        sorted_categories = categories_with_content + categories_without_content
+
         # Add each category
         total_items = 0
-        for category in CATEGORIES:
+        for category in sorted_categories:
             items = self.content.get(category, [])
-            if not items:
-                continue
-
             total_items += len(items)
+
             html += f"""
         <div class="category">
             <div class="category-title">📂 {category}</div>
 """
 
-            for i, item in enumerate(items, 1):
-                insights_html = ""
-                if item.get('key_insights'):
-                    insights_list = "\n".join([f"                    <li>{insight}</li>"
-                                              for insight in item['key_insights']])
-                    insights_html = f"""
+            if not items:
+                html += """
+            <div class="empty-category">
+                No content available today
+            </div>
+"""
+            else:
+                for i, item in enumerate(items, 1):
+                    insights_html = ""
+                    if item.get('key_insights'):
+                        # Convert markdown links to HTML for each insight
+                        insights_items = []
+                        for insight in item['key_insights']:
+                            insight_html = self._markdown_links_to_html(insight)
+                            insights_items.append(f"                    <li>{insight_html}</li>")
+                        insights_list = "\n".join(insights_items)
+                        insights_html = f"""
             <div class="insights">
                 <div class="insights-title">Key Insights:</div>
                 <ul>
@@ -155,14 +175,17 @@ class DigestGenerator:
                 </ul>
             </div>"""
 
-                html += f"""
+                    # Convert markdown links to HTML in summary as well
+                    summary_html = self._markdown_links_to_html(item['summary'])
+
+                    html += f"""
             <div class="item">
                 <div class="item-title">{item['subject']}</div>
                 <div class="item-meta">
                     From: {item['sender'].split('<')[0].strip()} |
                     <span class="score">Score: {item['relevance_score']}/10</span>
                 </div>
-                <div class="summary">{item['summary']}</div>
+                <div class="summary">{summary_html}</div>
 {insights_html}
             </div>
 """
