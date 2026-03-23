@@ -9,6 +9,9 @@ load_dotenv()
 YAHOO_EMAIL = os.getenv('YAHOO_EMAIL')
 YAHOO_PASSWORD = os.getenv('YAHOO_PASSWORD')
 
+# Email sources to use (comma-separated: gmail, yahoo)
+EMAIL_SOURCES = os.getenv('EMAIL_SOURCES', 'gmail').lower().split(',')
+
 # Claude API
 ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY')
 
@@ -45,5 +48,27 @@ NEWSLETTER_INDICATORS = [
     'daily',
     'substack',
     'medium',
-    'linkedin'
+    'beehiiv',  # Popular newsletter platform
+    'how to',  # Educational content
+    'guide to',  # Educational content
+    'tips',  # Educational content
+    'post from',  # Newsletter platforms
+]
+
+# Exclude these patterns (FOMO marketing, noise)
+EXCLUSION_PATTERNS = [
+    'impressions',  # LinkedIn "your posts got X impressions"
+    'views last week',
+    'people viewed your profile',
+    'you appeared in',
+    'searches this week',
+]
+
+# Whitelisted senders (always include, even if not detected as newsletter)
+WHITELISTED_SENDERS = [
+    'akash gupta',
+    'lenny',
+    'reforge',
+    'first round',
+    'a16z',
 ]

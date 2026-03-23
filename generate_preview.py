@@ -1,5 +1,5 @@
 """Generate a preview of the digest using test results"""
-from email_fetcher import EmailFetcher
+from multi_email_fetcher import MultiEmailFetcher
 from content_filter import ContentFilter
 from digest_generator import DigestGenerator
 
@@ -7,10 +7,9 @@ def main():
     print("Generating digest preview...")
     print()
 
-    # Fetch and categorize
-    fetcher = EmailFetcher()
-    messages = fetcher.fetch_recent_emails(max_results=30)
-    newsletters = fetcher.filter_newsletters(messages)
+    # Fetch and categorize from all configured email sources
+    fetcher = MultiEmailFetcher()
+    newsletters = fetcher.fetch_all_newsletters(max_results=30)
 
     if newsletters:
         filter_ai = ContentFilter()

@@ -10,6 +10,8 @@ from config import (
     GMAIL_TOKEN_PATH,
     DAYS_TO_SCAN,
     NEWSLETTER_INDICATORS,
+    EXCLUSION_PATTERNS,
+    WHITELISTED_SENDERS,
     CATEGORIES
 )
 
@@ -147,7 +149,18 @@ class EmailFetcher:
     def is_newsletter(self, email):
         """Check if email looks like a newsletter"""
         subject_lower = email['subject'].lower()
+        sender_lower = email['sender'].lower()
         body_lower = email['body'][:1000].lower()  # Check first 1000 chars
+
+        # First check exclusion patterns (FOMO marketing, etc.)
+        for pattern in EXCLUSION_PATTERNS:
+            if pattern.lower() in subject_lower or pattern.lower() in body_lower:
+                return False
+
+        # Check whitelisted senders (always include)
+        for sender in WHITELISTED_SENDERS:
+            if sender.lower() in sender_lower:
+                return True
 
         # Check for newsletter indicators
         for indicator in NEWSLETTER_INDICATORS:
