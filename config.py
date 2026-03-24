@@ -12,6 +12,14 @@ YAHOO_PASSWORD = os.getenv('YAHOO_PASSWORD')
 # Email sources to use (comma-separated: gmail, yahoo)
 EMAIL_SOURCES = os.getenv('EMAIL_SOURCES', 'gmail').lower().split(',')
 
+# Reddit API
+REDDIT_CLIENT_ID = os.getenv('REDDIT_CLIENT_ID')
+REDDIT_CLIENT_SECRET = os.getenv('REDDIT_CLIENT_SECRET')
+REDDIT_USER_AGENT = os.getenv('REDDIT_USER_AGENT', 'daily-digest:v1.0')
+
+# Subreddits to scan (comma-separated)
+SUBREDDITS = os.getenv('SUBREDDITS', 'thetagang,ProductManagement,HENRYFinance').split(',')
+
 # Claude API
 ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY')
 
