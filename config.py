@@ -33,7 +33,10 @@ DAYS_TO_SCAN = int(os.getenv('DAYS_TO_SCAN', 1))
 MAX_ITEMS_PER_CATEGORY = int(os.getenv('MAX_ITEMS_PER_CATEGORY', 3))
 
 # Gmail OAuth settings
-GMAIL_SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
+GMAIL_SCOPES = [
+    'https://www.googleapis.com/auth/gmail.readonly',
+    'https://www.googleapis.com/auth/gmail.send'
+]
 GMAIL_TOKEN_PATH = 'credentials/token.json'
 GMAIL_CREDENTIALS_PATH = 'credentials/credentials.json'
 
@@ -70,6 +73,7 @@ EXCLUSION_PATTERNS = [
     'people viewed your profile',
     'you appeared in',
     'searches this week',
+    'your daily digest',  # Exclude self-referential digest emails
 ]
 
 # Whitelisted senders (always include, even if not detected as newsletter)
@@ -79,4 +83,9 @@ WHITELISTED_SENDERS = [
     'reforge',
     'first round',
     'a16z',
+    'nick wignall',
+    'paweł',
+    'product compass',
+    'morning brew',
+    'brew markets',
 ]
