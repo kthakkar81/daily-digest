@@ -126,6 +126,22 @@ class EmailSender:
 
         return self.send_email(subject, html_content, text_body)
 
+    def send_custom_email(self, html_content, subject, text_body=None):
+        """Send a custom email (e.g., error notifications)
+
+        Args:
+            html_content: The HTML email content
+            subject: Email subject line
+            text_body: Plain text fallback (optional)
+
+        Returns:
+            True if sent successfully
+        """
+        if not text_body:
+            text_body = "Please view this email in HTML format."
+
+        return self.send_email(subject, html_content, text_body)
+
 
 def test_send():
     """Test sending a simple email"""
