@@ -18,33 +18,58 @@ class EmailSender:
         self.to_email = SEND_TO_EMAIL
 
     def authenticate(self):
-        """Authenticate with Gmail API"""
+        """Authenticate with Gmail API with robust error handling"""
         creds = None
 
         # Load existing credentials
         if os.path.exists(GMAIL_TOKEN_PATH):
-            with open(GMAIL_TOKEN_PATH, 'rb') as token:
-                creds = pickle.load(token)
+            try:
+                with open(GMAIL_TOKEN_PATH, 'rb') as token:
+                    creds = pickle.load(token)
+            except Exception as e:
+                print(f"⚠️  Warning: Could not load token file: {e}")
+                print("   Will attempt fresh authentication...")
 
         # Refresh or get new credentials
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 print("Refreshing Gmail credentials...")
-                creds.refresh(Request())
+                try:
+                    creds.refresh(Request())
+                    print("✅ Token refreshed successfully!")
+                except Exception as refresh_error:
+                    print(f"❌ Token refresh failed: {refresh_error}")
+                    print("   Refresh token may be expired or revoked.")
+                    print("   Manual re-authentication required.")
+                    print(f"   Run: python -c \"from email_sender import EmailSender; EmailSender().authenticate()\"")
+                    return False
             else:
-                print("Starting OAuth flow for Gmail send permission...")
-                print("A browser window will open for authorization.")
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    GMAIL_CREDENTIALS_PATH, GMAIL_SCOPES)
-                creds = flow.run_local_server(port=0)
+                try:
+                    print("Starting OAuth flow for Gmail send permission...")
+                    print("A browser window will open for authorization.")
+                    flow = InstalledAppFlow.from_client_secrets_file(
+                        GMAIL_CREDENTIALS_PATH, GMAIL_SCOPES)
+                    creds = flow.run_local_server(port=0)
+                except Exception as oauth_error:
+                    print(f"❌ OAuth flow failed: {oauth_error}")
+                    print("   Cannot authenticate in non-interactive mode.")
+                    return False
 
             # Save credentials
-            with open(GMAIL_TOKEN_PATH, 'wb') as token:
-                pickle.dump(creds, token)
-            print("✅ Credentials saved!")
+            try:
+                with open(GMAIL_TOKEN_PATH, 'wb') as token:
+                    pickle.dump(creds, token)
+                print("✅ Credentials saved!")
+            except Exception as save_error:
+                print(f"⚠️  Warning: Could not save token: {save_error}")
+                # Continue anyway since we have valid creds in memory
 
-        self.service = build('gmail', 'v1', credentials=creds)
-        return True
+        try:
+            self.service = build('gmail', 'v1', credentials=creds)
+            return True
+        except Exception as build_error:
+            print(f"❌ Failed to build Gmail service: {build_error}")
+            return False
 
     def create_message(self, subject, html_body, text_body=None):
         """Create a MIME message for sending
